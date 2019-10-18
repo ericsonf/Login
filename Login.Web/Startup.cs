@@ -1,9 +1,11 @@
+using System;
 using System.Text;
 using Login.Core.Helpers;
 using Login.Core.Interfaces;
 using Login.Infrastructure.Data;
 using Login.UseCases;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -27,15 +29,17 @@ namespace Login.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IRepository, LoginRepository>();
-            services.AddScoped<IUser, UserUseCase>();
+            services.AddScoped<ICommonUser, CommonUserUseCase>();
+            services.AddScoped<IActiveDirectoryUser, ActiveDirectoryUserUseCase>();
 
             var appSettingsSection = Configuration.GetSection("AppSettings");
-            var key = Encoding.ASCII.GetBytes(appSettingsSection.Get<AppSettings>().Secret);
-
+            var appSettings = appSettingsSection.Get<AppSettings>();
+            
+            services.Configure<AppSettings>(appSettingsSection);
             services.AddDbContext<LoginDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("LoginConnection")));
             services.AddCors();
             services.AddControllers();
-            services.Configure<AppSettings>(appSettingsSection);
+            
             services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,11 +51,22 @@ namespace Login.Web
                 x.SaveToken = true;
                 x.TokenValidationParameters = new TokenValidationParameters
                 {
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appSettings.Secret)),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
+                    ValidateLifetime = true,
+                    ValidIssuer = appSettings.Issuer,
+                    ValidAudiences = appSettings.Audience.Split(','),
+                    ClockSkew = TimeSpan.Zero
                 };
+            });
+
+            services.AddAuthorization(auth =>
+            {
+                auth.AddPolicy("Bearer", new AuthorizationPolicyBuilder()
+                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                    .RequireAuthenticatedUser().Build());
             });
         }
 
@@ -65,15 +80,14 @@ namespace Login.Web
 
             app.UseHttpsRedirection();
             app.UseRouting();
-
+            app.UseAuthentication();
+            app.UseAuthorization();
+            
             app.UseCors(x => x
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
 
-            app.UseAuthentication();
-            app.UseAuthorization();
-            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Login.Core.Interfaces;
 using Login.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -13,47 +12,119 @@ namespace Login.Web.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
-        private readonly IUser _user;
+        private readonly ICommonUser _user;
 
-        public UserController(ILogger<UserController> logger, IUser user)
+        private readonly IActiveDirectoryUser _adUser;
+
+        public UserController(ILogger<UserController> logger, ICommonUser user, IActiveDirectoryUser adUser)
         {
             _logger = logger;
             _user = user;
+            _adUser = adUser;
         }
 
-        [HttpPost("new-account")]
-        public IActionResult Register(RegisterUserViewModel registerUser)
+        [Authorize(Roles = "view-user")]
+        [HttpGet("get-all-users")]
+        public IActionResult Get()
+        {
+            var users = _user.List();
+            return Ok(users);
+        }
+
+        [Authorize(Roles = "view-user")]
+        [HttpGet("get-user")]
+        public IActionResult Get(int id)
+        {
+            var user = _user.GetById(id);
+            if (user == null) return NotFound();
+            
+            return Ok(user);
+        }
+
+        [Authorize(Roles = "view-user")]
+        [HttpGet("get-ad-user/{userName}")]
+        public IActionResult Get(string userName)
+        {
+            var user = _adUser.GetUser(userName);
+            if (user == null) return NotFound();
+            
+            return Ok(user);
+        }
+
+        [Authorize(Roles = "create-user")]
+        [HttpPost("create-user")]
+        public IActionResult Post(RegisterUserViewModel registerUser)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
+            if (registerUser == null) return NoContent();
             
-            var user = new User {
+            var user = new CommonUser {
                 FirstName = registerUser.FirstName,
                 LastName = registerUser.LastName,
                 Username = registerUser.UserName,
                 Email = registerUser.Email
             };
 
-            var createdUser = _user.Create(user, registerUser.Password);
+             _user.Create(user, registerUser.Password);
 
-            return Ok(createdUser);
+            return Ok();
+        }
+
+        [Authorize(Roles = "edit-user")]
+        [HttpPut("edit-user")]
+        public IActionResult Put(int id, RegisterUserViewModel registerUser)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
+            if (registerUser == null) return NoContent();
+
+            var userToUpdate = _user.GetById(id);
+            if (userToUpdate == null) return NotFound();
+            else 
+            {
+                userToUpdate.FirstName = registerUser.FirstName;
+                userToUpdate.LastName = registerUser.LastName;
+                userToUpdate.Username = registerUser.UserName;
+                userToUpdate.Email = registerUser.Email;
+            }
+
+            _user.Update(userToUpdate);
+
+            return Ok();
+        }
+
+        [Authorize(Roles = "delete-user")]
+        [HttpPut("delete-user")]
+        public IActionResult Delete(int id)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
+
+            var userToDelete = _user.GetById(id);
+            if (userToDelete == null) return NotFound();
+            
+            _user.Delete(userToDelete);
+
+            return Ok();
         }
 
         [AllowAnonymous]
-        [HttpPost("authenticate")]
+        [HttpPost("authenticate-user")]
         public IActionResult Authenticate([FromBody]LoginUserViewModel loginUser)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
             
             var user = _user.Authenticate(loginUser.UserName, loginUser.Password);
-            if (user == null) return BadRequest();
+            if (user == null) return NotFound();
 
-            return Ok(user);
-        }
+            var token = _user.GenerateToken(user);
+            if (token == null) return BadRequest();
 
-        public IActionResult GetAll()
-        {
-            var users = _user.GetAll();
-            return Ok(users);
-        }
+            var loggedUser = new LoggedUserViewModel {
+                UserName = user.Username,
+                Email = user.Email,
+                Token = token
+            };
+
+            return Ok(loggedUser);
+        } 
     }
 }

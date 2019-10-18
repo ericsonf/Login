@@ -6,7 +6,10 @@ namespace Login.Infrastructure.Data
     {
         public LoginDbContext(DbContextOptions<LoginDbContext> options)
             : base(options) { }
-        
-        public DbSet<User> User { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        { }
+
+        public DbSet<CommonUser> CommonUser { get; set; }
     }
 }
