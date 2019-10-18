@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Login.Core.Enum;
 using Login.Core.Helpers;
 using Login.Core.Shared;
 
@@ -18,9 +19,9 @@ namespace Login.Core.Interfaces
 
         PagedResult<T> List<T>(string[] navProperties, int page, int limit) where T : BaseEntity;
 
-        PagedResult<T> List<T>(string[] navProperties, Expression<Func<T, Object>> predicateSort, Enum typeOrder, int page, int limit) where T : BaseEntity;
+        PagedResult<T> List<T>(string[] navProperties, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity;
 
-        PagedResult<T> List<T>(Expression<Func<T, Object>> predicateSort, Enum typeOrder, int page, int limit) where T : BaseEntity;
+        PagedResult<T> List<T>(Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity;
 
         IEnumerable<T> Filter<T>(Expression<Func<T, bool>> predicate) where T : BaseEntity;
 
@@ -30,9 +31,9 @@ namespace Login.Core.Interfaces
 
         PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, string[] navProperties, int page, int limit) where T : BaseEntity;
 
-        PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, string[] navProperties, Expression<Func<T, Object>> predicateSort, Enum typeOrder, int page, int limit) where T : BaseEntity;
+        PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, string[] navProperties, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity;
 
-        PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, Object>> predicateSort, Enum typeOrder, int page, int limit) where T : BaseEntity;
+        PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity;
 
         void Add<T>(T entity) where T : BaseEntity;
 

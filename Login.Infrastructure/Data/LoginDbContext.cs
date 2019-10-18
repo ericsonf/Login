@@ -11,5 +11,7 @@ namespace Login.Infrastructure.Data
         { }
 
         public DbSet<CommonUser> CommonUser { get; set; }
+
+        public DbSet<ActiveDirectoryUser> ActiveDirectoryUser { get; set; }
     }
 }

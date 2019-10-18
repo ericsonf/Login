@@ -12,14 +12,18 @@ namespace Login.Web.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
-        private readonly ICommonUser _user;
+
+        private readonly IUser _user;
+
+        private readonly ICommonUser _commonUser;
 
         private readonly IActiveDirectoryUser _adUser;
 
-        public UserController(ILogger<UserController> logger, ICommonUser user, IActiveDirectoryUser adUser)
+        public UserController(ILogger<UserController> logger, IUser user, ICommonUser commonUser, IActiveDirectoryUser adUser)
         {
             _logger = logger;
             _user = user;
+            _commonUser = commonUser;
             _adUser = adUser;
         }
 
@@ -32,7 +36,7 @@ namespace Login.Web.Controllers
         }
 
         [Authorize(Roles = "view-user")]
-        [HttpGet("get-user")]
+        [HttpGet("get-user/{id}")]
         public IActionResult Get(int id)
         {
             var user = _user.GetById(id);
@@ -65,7 +69,7 @@ namespace Login.Web.Controllers
                 Email = registerUser.Email
             };
 
-             _user.Create(user, registerUser.Password);
+            _commonUser.Create(user, registerUser.Password);
 
             return Ok();
         }
@@ -87,7 +91,7 @@ namespace Login.Web.Controllers
                 userToUpdate.Email = registerUser.Email;
             }
 
-            _user.Update(userToUpdate);
+            _commonUser.Update((CommonUser)userToUpdate);
 
             return Ok();
         }
@@ -100,8 +104,8 @@ namespace Login.Web.Controllers
 
             var userToDelete = _user.GetById(id);
             if (userToDelete == null) return NotFound();
-            
-            _user.Delete(userToDelete);
+
+            _commonUser.Delete((CommonUser)userToDelete);
 
             return Ok();
         }
@@ -112,7 +116,7 @@ namespace Login.Web.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
             
-            var user = _user.Authenticate(loginUser.UserName, loginUser.Password);
+            var user = _commonUser.Authenticate(loginUser.UserName, loginUser.Password);
             if (user == null) return NotFound();
 
             var token = _user.GenerateToken(user);

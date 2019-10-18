@@ -1,4 +1,6 @@
 public class ActiveDirectoryUser : User
 {
-    public string Manager { get; set; }
+    public string Title { get; set; }
+
+    public string Department { get; set; }
 }

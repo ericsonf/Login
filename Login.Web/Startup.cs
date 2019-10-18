@@ -4,6 +4,7 @@ using Login.Core.Helpers;
 using Login.Core.Interfaces;
 using Login.Infrastructure.Data;
 using Login.UseCases;
+using Login.UseCases.UseCase;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -29,6 +30,7 @@ namespace Login.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IRepository, LoginRepository>();
+            services.AddScoped<IUser, UserUseCase>();
             services.AddScoped<ICommonUser, CommonUserUseCase>();
             services.AddScoped<IActiveDirectoryUser, ActiveDirectoryUserUseCase>();
 
