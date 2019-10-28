@@ -1,16 +1,20 @@
+using System;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using Login.Core.Helpers;
 using Login.Core.Interfaces;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Login.UseCases
 {
     public class ActiveDirectoryUserUseCase : IActiveDirectoryUser
     {
         private readonly AppSettings _appSettings;
-
         private readonly IRepository _repository;
 
         public ActiveDirectoryUserUseCase(IOptions<AppSettings> appSettings, IRepository repository)
@@ -41,14 +45,25 @@ namespace Login.UseCases
             return adUser;
         }
 
-        public ActiveDirectoryUser Authenticate(string userName)
+        public string GenerateToken(ActiveDirectoryUser user)
         {
-            if (GetUser(userName) == null) return null;
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Role, "view-user"),
+                    new Claim(ClaimTypes.Role, "create-user")
+                }),
+                Expires = DateTime.UtcNow.AddMilliseconds(_appSettings.Expiration),
+                Issuer = _appSettings.Issuer,
+                Audience = _appSettings.Audience.Split(',').First(),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appSettings.Secret)), SecurityAlgorithms.HmacSha256Signature)
+            };
 
-            var user = _repository.Filter<ActiveDirectoryUser>(x => x.Username.Equals(userName)).FirstOrDefault();
-            if (user == null) return null;
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return user;
+            return tokenHandler.WriteToken(token);
         }
     }
 }

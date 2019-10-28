@@ -10,8 +10,7 @@ namespace Login.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         { }
 
-        public DbSet<CommonUser> CommonUser { get; set; }
-
+        public DbSet<User> User { get; set; }
         public DbSet<ActiveDirectoryUser> ActiveDirectoryUser { get; set; }
     }
 }

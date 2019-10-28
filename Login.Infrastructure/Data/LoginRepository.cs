@@ -1,4 +1,4 @@
-using Login.Core.Enum;
+using Login.Core.Enums;
 using Login.Core.Helpers;
 using Login.Core.Interfaces;
 using Login.Core.Shared;
@@ -58,7 +58,7 @@ namespace Login.Infrastructure.Data
             return new PagedResult<T> { Result = pagedResult, TotalPages = totalPages };
         }
 
-        public PagedResult<T> List<T>(string[] navProperties, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity
+        public PagedResult<T> List<T>(string[] navProperties, Expression<Func<T, Object>> predicateSort, EnumOrder typeOrder, int page, int limit) where T : BaseEntity
         {
             IQueryable<T> result = _dbContext.Set<T>();
             result = SetIncludes(result, navProperties);
@@ -71,7 +71,7 @@ namespace Login.Infrastructure.Data
             return new PagedResult<T> { Result = pagedResult, TotalPages = totalPages };
         }
 
-        public PagedResult<T> List<T>(Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity
+        public PagedResult<T> List<T>(Expression<Func<T, Object>> predicateSort, EnumOrder typeOrder, int page, int limit) where T : BaseEntity
         {
             IQueryable<T> result = _dbContext.Set<T>();
             result = GetOrderResult(result, predicateSort, typeOrder.ToString());
@@ -124,7 +124,7 @@ namespace Login.Infrastructure.Data
             return new PagedResult<T> { Result = pagedResult, TotalPages = totalPages };
         }
 
-        public PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, string[] navProperties, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity
+        public PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, string[] navProperties, Expression<Func<T, Object>> predicateSort, EnumOrder typeOrder, int page, int limit) where T : BaseEntity
         {
             if (predicate == null) return null;
             IQueryable<T> result = _dbContext.Set<T>().Where(predicate);        
@@ -138,7 +138,7 @@ namespace Login.Infrastructure.Data
             return new PagedResult<T> { Result = pagedResult, TotalPages = totalPages };
         }
 
-        public PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, Object>> predicateSort, Order typeOrder, int page, int limit) where T : BaseEntity
+        public PagedResult<T> Filter<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, Object>> predicateSort, EnumOrder typeOrder, int page, int limit) where T : BaseEntity
         {
             if (predicate == null) return null;
             IQueryable<T> result = _dbContext.Set<T>().Where(predicate);

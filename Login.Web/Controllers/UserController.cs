@@ -12,18 +12,13 @@ namespace Login.Web.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
-
         private readonly IUser _user;
-
-        private readonly ICommonUser _commonUser;
-
         private readonly IActiveDirectoryUser _adUser;
 
-        public UserController(ILogger<UserController> logger, IUser user, ICommonUser commonUser, IActiveDirectoryUser adUser)
+        public UserController(ILogger<UserController> logger, IUser user, IActiveDirectoryUser adUser)
         {
             _logger = logger;
             _user = user;
-            _commonUser = commonUser;
             _adUser = adUser;
         }
 
@@ -50,7 +45,7 @@ namespace Login.Web.Controllers
         public IActionResult Get(string userName)
         {
             var user = _adUser.GetUser(userName);
-            if (user == null) return NotFound();
+            if (user.Username == null) return NotFound();
             
             return Ok(user);
         }
@@ -62,14 +57,14 @@ namespace Login.Web.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
             if (registerUser == null) return NoContent();
             
-            var user = new CommonUser {
+            var user = new User {
                 FirstName = registerUser.FirstName,
                 LastName = registerUser.LastName,
                 Username = registerUser.UserName,
                 Email = registerUser.Email
             };
 
-            _commonUser.Create(user, registerUser.Password);
+            _user.Create(user, registerUser.Password);
 
             return Ok();
         }
@@ -91,7 +86,7 @@ namespace Login.Web.Controllers
                 userToUpdate.Email = registerUser.Email;
             }
 
-            _commonUser.Update((CommonUser)userToUpdate);
+            _user.Update((User)userToUpdate);
 
             return Ok();
         }
@@ -105,7 +100,7 @@ namespace Login.Web.Controllers
             var userToDelete = _user.GetById(id);
             if (userToDelete == null) return NotFound();
 
-            _commonUser.Delete((CommonUser)userToDelete);
+            _user.Delete((User)userToDelete);
 
             return Ok();
         }
@@ -116,7 +111,7 @@ namespace Login.Web.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
             
-            var user = _commonUser.Authenticate(loginUser.UserName, loginUser.Password);
+            var user = _user.Authenticate(loginUser.UserName, loginUser.Password);
             if (user == null) return NotFound();
 
             var token = _user.GenerateToken(user);
@@ -129,6 +124,27 @@ namespace Login.Web.Controllers
             };
 
             return Ok(loggedUser);
-        } 
+        }
+
+        [AllowAnonymous]
+        [HttpPost("authenticate-ad-user/{userName}")]
+        public IActionResult Authenticate(string userName)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
+            
+            var user = _adUser.GetUser(userName);
+            if (user.Username == null) return NotFound();
+
+            var token = _adUser.GenerateToken(user);
+            if (token == null) return BadRequest();
+
+            var loggedUser = new LoggedUserViewModel {
+                UserName = user.Username,
+                Email = user.Email,
+                Token = token
+            };
+
+            return Ok(loggedUser);
+        }
     }
 }

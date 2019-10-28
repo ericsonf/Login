@@ -31,7 +31,6 @@ namespace Login.Web
         {
             services.AddScoped<IRepository, LoginRepository>();
             services.AddScoped<IUser, UserUseCase>();
-            services.AddScoped<ICommonUser, CommonUserUseCase>();
             services.AddScoped<IActiveDirectoryUser, ActiveDirectoryUserUseCase>();
 
             var appSettingsSection = Configuration.GetSection("AppSettings");
